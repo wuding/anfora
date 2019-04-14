@@ -1,0 +1,24 @@
+{
+  "name": "wuding/anfora",
+  "description": "Class File Loader",
+  "keywords": ["File", "ClassLoader", "Composer"],
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Benny Wu",
+      "email": "contact@urlnk.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Anfora\\": "src/"
+    },
+    "files": [
+      "src/Anfora.php"
+    ]
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "wuding/php-func": "^1.0.3"
+  }
+}
