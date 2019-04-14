@@ -5,4 +5,18 @@
  */
 
 require_once __DIR__ . '/Anfora/Autoload.php';
+
+/**
+ * 解析 JSON 转换为遍历可用数组
+ */
+include __DIR__ . '/Anfora/JSON.php';
+include __DIR__ . '/Anfora/JSON/ComposerJSON.php';
+
+use Ext\JSON\ComposerJSON;
+
+$composerJson = new ComposerJSON(realpath(BASE_DIR . '/composer.json.dist'));
+ComposerJSON::setVendorDir(VENDOR_DIR);
+ComposerJSON::setSuperVars();
+# print_r($ANFORA_FILE);exit;
+
 return $anfora = Anfora_Autoload::getLoader();
