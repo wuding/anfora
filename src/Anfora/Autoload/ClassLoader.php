@@ -89,5 +89,7 @@ class ClassLoader
 }
 
 function includeFile($file) {
+    $fileIdentifier = md5($file);
+    $GLOBALS['_ANFORA']['files'][$fileIdentifier] = $file;
     return $include = @include_once $file;
 }
