@@ -25,7 +25,7 @@ class ClassLoader
 
         $included = null;
         if ($file = $this->findFile($class)) {
-            $included = includeFile($file);
+            $included = includeFile($file, $class);
         }
         
         return $included;
@@ -80,7 +80,7 @@ class ClassLoader
      */
     public function autoloadFiles()
     {
-        $includeFiles = isset($GLOBALS['ANFORA_FILE']) ? $GLOBALS['ANFORA_FILE'] : [];
+        $includeFiles = isset($GLOBALS['_ANFORA']['files']) ? $GLOBALS['_ANFORA']['files'] : [];
         # print_r($includeFiles);exit;
         foreach ($includeFiles as $fileIdentifier => $file) {
             includeFile($file);
@@ -88,8 +88,9 @@ class ClassLoader
     }
 }
 
-function includeFile($file) {
-    $fileIdentifier = md5($file);
-    $GLOBALS['_ANFORA']['files'][$fileIdentifier] = $file;
+function includeFile($file, $class = null) {
+    $file = realpath($file);
+    $included = file_exists($file);
+    $GLOBALS['_ANFORA']['included_files'][$file] = [$included, $class];
     return $include = @include_once $file;
 }

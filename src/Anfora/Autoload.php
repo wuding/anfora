@@ -27,7 +27,7 @@ class Anfora_Autoload
         self::$loader = $loader = new \Anfora\Autoload\ClassLoader();
         spl_autoload_unregister($autoload_function);
 
-        $rule = isset($GLOBALS['ANFORA_RULE']) ? $GLOBALS['ANFORA_RULE'] : [];
+        $rule = isset($GLOBALS['_ANFORA']['psr-4']) ? $GLOBALS['_ANFORA']['psr-4'] : [];
         $map = self::$autoload_psr4 ? : $rule;
         $loader->setPsr4($map);
         # print_r($map);
