@@ -6,6 +6,7 @@
 define('BASE_DIR', __DIR__ . '/..');
 # define('VENDOR_DIR', __DIR__ . '/../vendor');
 define('VENDOR_DIR', realpath(__DIR__ . '/..'));
+define('COMPOSER_JSON', realpath(BASE_DIR . '/composer.json.dist'));
 
 /**
  * 预定义示例请求地址文件名

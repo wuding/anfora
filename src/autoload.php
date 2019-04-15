@@ -14,7 +14,7 @@ include __DIR__ . '/Anfora/JSON/ComposerJSON.php';
 
 use Ext\JSON\ComposerJSON;
 
-$composerJson = new ComposerJSON(realpath(BASE_DIR . '/composer.json.dist'));
+$composerJson = new ComposerJSON(defined('COMPOSER_JSON') ? COMPOSER_JSON : realpath(BASE_DIR . '/composer.json'));
 ComposerJSON::setVendorDir(VENDOR_DIR);
 ComposerJSON::setSuperVars();
 # print_r($ANFORA_FILE);exit;
