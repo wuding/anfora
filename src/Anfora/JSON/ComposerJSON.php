@@ -77,8 +77,18 @@ class ComposerJSON extends JSON
         foreach ($array as $key => &$value) {
             $value = trim($value, '/');
             if (!preg_match('/:/', $value)) {
+                if (preg_match('/^(src\/|app)/', $value)) {
+                    $value = realpath(BASE_DIR . '/' . $value);
+                    goto end;
+                }
+
+                if (preg_match('/^vendor\//', $value)) {
+                    $value = preg_replace('/^vendor\//', '', $value);
+                }
                 $value = self::$vendorDir . $value;
+                $value = realpath($value);
             }
+            end:
             $value = str_replace('\\', '/', $value);
         }
         return $array;
@@ -102,7 +112,7 @@ class ComposerJSON extends JSON
     public static function setSuperVars()
     {
         global $ANFORA_FILE, $ANFORA_RULE;
-        $ANFORA_FILE = self::getFiles();
-        $ANFORA_RULE = self::getPsr4(0, true);
+        $GLOBALS['_ANFORA']['files'] = array_merge(self::getFiles(), [realpath(__DIR__ . '/../../../src/Anfora.php')]);
+        $GLOBALS['_ANFORA']['psr-4'] = array_merge(self::getPsr4(0, true), ['Anfora\\' => realpath(__DIR__ . '/../../../src')]);
     }
 }
