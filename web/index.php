@@ -5,7 +5,7 @@
  */
 define('BASE_DIR', __DIR__ . '/..');
 # define('VENDOR_DIR', __DIR__ . '/../vendor');
-define('VENDOR_DIR', realpath(__DIR__ . '/..'));
+define('VENDOR_DIR', 'E:/www/work/wuding/couponiang/vendor');
 define('COMPOSER_JSON', realpath(BASE_DIR . '/composer.json.dist'));
 
 /**
