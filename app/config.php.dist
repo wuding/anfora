@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * 项目固定绝对唯一目录
+ */
+define('BASE_DIR', __DIR__ . '/..');
+# define('VENDOR_DIR', __DIR__ . '/../vendor');
+define('VENDOR_DIR', 'E:/www/work/wuding/couponiang/vendor');
+define('COMPOSER_JSON', realpath(BASE_DIR . '/composer.json.dist'));
+
+/**
+ * 预定义示例请求地址文件名
+ */
+$_NAMES = array(
+    '' => 'index',
+    'index',
+);
+
+return [
+    'func' => [
+        'config' => [
+            '_isset' => ['', [], '', null],
+            '\Func\array_diff_kv' => ['', [], [], [], false],
+            'str_match' => ['', '//', '', null, false],
+        ],
+        'load' => ['variable', 'arr', 'pcre', 'filesystem'],
+    ],
+];
