@@ -58,6 +58,7 @@ class JSON
         if (!$filename) {
             return false;
         }
+        $GLOBALS['_ANFORA']['composer_json'][] = $filename;
         $file_contents = file_get_contents($filename);
         self::$json_decoded = json_decode($file_contents);
     }
