@@ -88,7 +88,7 @@ class ComposerJSON extends JSON
         $autoload = self::getAutoload($dev);
         $notation = self::object_or_array_value($autoload, 'files');
         $notation = $notation ? : null;
-        (array) $array = $format ? self::geTKeyValue($notation, [__METHOD__, __LINE__, __FILE__]) : $notation;
+        (array) $array = $format ? self::getKeyValue($notation) : $notation;
         return $array;
     }
 
@@ -197,9 +197,8 @@ class ComposerJSON extends JSON
     /**
      * reset value path
      */
-    public static function getKeyValue($array = [], $track = [])
+    public static function getKeyValue($array = [])
     {
-        # print_r([__FILE__, __LINE__, $array, $track]);
         foreach ($array as $key => &$value) {
             if (is_array($value)) {
                 $value = array_pop($value);
