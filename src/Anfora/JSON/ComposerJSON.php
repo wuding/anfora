@@ -28,24 +28,25 @@ class ComposerJSON extends JSON
         if (!$dev) {
             return parent::$json_decoded->autoload;
         }
-        return $notation = parent::$json_decoded->{'autoload-dev'} ?? null;
+        return $notation = isset(parent::$json_decoded->{'autoload-dev'}) ? parent::$json_decoded->{'autoload-dev'} : null;
     }
 
     /**
      * get section
      */
-    public static function getSection($section_name = 'require', $dev = null, $json_object = null, $track = [])
+    public static function getSection($section_name = 'require', $dev = null, $json_object = null)
     {
         $json_object = $json_object ? : parent::$json_decoded;
+        $json_object = self::object_to_array($json_object);
         if (!$dev) {
-            $section_value = $json_object->$section_name ?? null;
+            $section_value = isset($json_object[$section_name]) ? $json_object[$section_name] : null;
             if (!$section_value) {
-                # print_r([__FILE__, __LINE__, $json_object, $track]);
+                print_r([__FILE__, __LINE__, get_defined_vars()]);exit;
             }
             return $section_value;
         }
         $section_name .= '-dev';
-        return $notation = $json_object->$section_name;
+        return $notation = $json_object[$section_name];
     }
 
     /**
@@ -54,7 +55,8 @@ class ComposerJSON extends JSON
     public static function getPsr4($dev = null, $format = false)
     {
         $autoload = self::getAutoload($dev);
-        $notation = self::object_or_array_value($autoload, 'psr-4') ?? null;
+        $notation = self::object_or_array_value($autoload, 'psr-4');
+        $notation = $notation ? : null;
         (array) $array = $format ? self::getKeyValue($notation, [__METHOD__, __LINE__, __FILE__]) : $notation;
         # print_r([__FILE__, __LINE__, get_defined_vars()]);
         return $array;
@@ -63,7 +65,7 @@ class ComposerJSON extends JSON
     public static function getPsr4Recursive($dev = null, $format = false, $json_object = null, $base_dir = null)
     {
         $autoload = self::getSection('autoload', $dev, $json_object);
-        $notation = $autoload['psr-4'] ?? null;
+        $notation = isset($autoload['psr-4']) ? $autoload['psr-4'] : null;
         (array) $array = $format ? self::getKeyValueRecursive($notation, $base_dir) : $notation;
         # print_r([__FILE__, __LINE__, get_defined_vars()]);
         return $array;
@@ -84,7 +86,8 @@ class ComposerJSON extends JSON
     public static function getFiles($dev = null, $format = true)
     {
         $autoload = self::getAutoload($dev);
-        $notation = self::object_or_array_value($autoload, 'files') ?? null;
+        $notation = self::object_or_array_value($autoload, 'files');
+        $notation = $notation ? : null;
         (array) $array = $format ? self::geTKeyValue($notation, [__METHOD__, __LINE__, __FILE__]) : $notation;
         return $array;
     }
@@ -101,9 +104,9 @@ class ComposerJSON extends JSON
     /**
      * get require
      */
-    public static function getRequire($dev = null)
+    public static function getRequire($dev = null, $json_decoded = null)
     {
-        $require = self::getSection('require', $dev, NULL, [__METHOD__, __LINE__, __FILE__]);
+        $require = self::getSection('require', $dev, $json_decoded) ? : [];
         foreach ($require as $vendor_package => $project_version) {
             if (!preg_match('/\//', $vendor_package)) {
                 unset($require->{$vendor_package});
@@ -120,18 +123,29 @@ class ComposerJSON extends JSON
      * 获取 PSR-4 键值对
      *
      */
-    public static function getRequireComposerJson($dev = null)
+    public static function getRequireComposerJson($dev = null, $json_decoded = null)
     {
-        $require = self::getRequire($dev);
+        $require = self::getRequire($dev, $json_decoded) ? : [];
+        # print_r(get_defined_vars());
+        $require_recursive = [];
         foreach ($require as $vendor_package => $project_version) {
+            if (!preg_match('/\//', $vendor_package)) {
+                goto end;
+            }
             $filename = self::$vendorDir  . $vendor_package . '/composer.json';
             $composer_json = realpath($filename);
+            if (in_array($composer_json, $GLOBALS['_ANFORA']['composer_json'])) {
+                goto end;
+            }
             $GLOBALS['_ANFORA']['composer_json'][] = $composer_json;
             $file_contents = $composer_json ? file_get_contents($composer_json) : '{}';
             if (!$composer_json) {
                 print_r([__FILE__, __LINE__, get_defined_vars()]);exit;
             }
             $json_decoded = self::object_to_array(json_decode($file_contents));
+            $sub_require = self::getRequireComposerJson($dev, $json_decoded);
+            $require_recursive = array_merge($require_recursive, $sub_require);
+            # print_r([__FILE__, __LINE__, $sub_require]);
             $psr4 = self::getPsr4Recursive(null, true, (object) $json_decoded, realpath(self::$vendorDir  . $vendor_package));
             $json_decoded['autoload']['psr-4'] = $psr4;
             # print_r([$json_decoded, $psr4, __FILE__, __LINE__]);
@@ -142,8 +156,9 @@ class ComposerJSON extends JSON
                 # print_r([__FILE__, __LINE__, $json_merge]);
             }
             # $require->{$vendor_package} = [$project_version, $composer_json, $json_merge];
+            end:
         }
-        # print_r([__FILE__, __LINE__, parent::$json_decoded]);
+        # print_r([__FILE__, __LINE__, $require_recursive]);
         return $require;
     }
 
@@ -243,6 +258,6 @@ class ComposerJSON extends JSON
     {
         $GLOBALS['_ANFORA']['require'] = self::getRequireComposerJson();
         $GLOBALS['_ANFORA']['files'] = array_merge(self::getFiles(), [realpath(__DIR__ . '/../../../src/Anfora.php')]);
-        $GLOBALS['_ANFORA']['psr-4'] = array_merge(self::getPsr4(0, true), ['Anfora\\' => realpath(__DIR__ . '/../../../src')]);
+        $GLOBALS['_ANFORA']['psr-4'] = array_merge((array) self::getPsr4(0, true), ['Anfora\\' => realpath(__DIR__ . '/../../../src')]);
     }
 }
