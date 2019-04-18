@@ -25,4 +25,7 @@ return [
         ],
         'load' => ['variable', 'arr', 'pcre', 'filesystem'],
     ],
+    'autoload' => [
+        'file' => __DIR__ . '/../src/autoload.php',
+    ],
 ];

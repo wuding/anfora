@@ -7,7 +7,7 @@ $_CONFIG = require __DIR__ . '/../app/config.php';
  *
  * 声明函数库
  */
-$autoload = require __DIR__ . '/../src/autoload.php';
+$autoload = require $_CONFIG['autoload']['file'];
 $anfora = new \Anfora;
 
 // 依赖函数
