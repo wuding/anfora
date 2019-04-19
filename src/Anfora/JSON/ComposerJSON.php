@@ -11,6 +11,7 @@ use Ext\JSON;
 class ComposerJSON extends JSON
 {
     public static $vendorDir = '';
+    public static $require = [];
 
     /**
      * 构建函数
@@ -41,12 +42,12 @@ class ComposerJSON extends JSON
         if (!$dev) {
             $section_value = isset($json_object[$section_name]) ? $json_object[$section_name] : null;
             if (!$section_value) {
-                print_r([__FILE__, __LINE__, get_defined_vars()]);exit;
+                # print_r([__FILE__, __LINE__, get_defined_vars()]);exit;
             }
             return $section_value;
         }
         $section_name .= '-dev';
-        return $notation = $json_object[$section_name];
+        return $notation = isset($json_object[$section_name]) ? $json_object[$section_name] : null;
     }
 
     /**
@@ -58,7 +59,6 @@ class ComposerJSON extends JSON
         $notation = self::object_or_array_value($autoload, 'psr-4');
         $notation = $notation ? : null;
         (array) $array = $format ? self::getKeyValue($notation, [__METHOD__, __LINE__, __FILE__]) : $notation;
-        # print_r([__FILE__, __LINE__, get_defined_vars()]);
         return $array;
     }
 
@@ -67,7 +67,6 @@ class ComposerJSON extends JSON
         $autoload = self::getSection('autoload', $dev, $json_object);
         $notation = isset($autoload['psr-4']) ? $autoload['psr-4'] : null;
         (array) $array = $format ? self::getKeyValueRecursive($notation, $base_dir) : $notation;
-        # print_r([__FILE__, __LINE__, get_defined_vars()]);
         return $array;
     }
 
@@ -89,6 +88,17 @@ class ComposerJSON extends JSON
         $notation = self::object_or_array_value($autoload, 'files');
         $notation = $notation ? : null;
         (array) $array = $format ? self::getKeyValue($notation) : $notation;
+        return $array;
+    }
+
+    /**
+     * multiple
+     */
+    public static function getAutoloadOption($name = 'files', $dev = null, $format = false, $json_object = null, $base_dir = null)
+    {
+        $autoload = self::getSection('autoload', $dev, $json_object);
+        $notation = isset($autoload[$name]) ? $autoload[$name] : null;
+        (array) $array = $format ? self::getKeyValueRecursive($notation, $base_dir) : $notation;
         return $array;
     }
 
@@ -126,39 +136,48 @@ class ComposerJSON extends JSON
     public static function getRequireComposerJson($dev = null, $json_decoded = null)
     {
         $require = self::getRequire($dev, $json_decoded) ? : [];
-        # print_r(get_defined_vars());
         $require_recursive = [];
         foreach ($require as $vendor_package => $project_version) {
             if (!preg_match('/\//', $vendor_package)) {
                 goto end;
             }
+
             $filename = self::$vendorDir  . $vendor_package . '/composer.json';
             $composer_json = realpath($filename);
             if (in_array($composer_json, $GLOBALS['_ANFORA']['composer_json'])) {
                 goto end;
             }
-            $GLOBALS['_ANFORA']['composer_json'][] = $composer_json;
             $file_contents = $composer_json ? file_get_contents($composer_json) : '{}';
             if (!$composer_json) {
-                print_r([__FILE__, __LINE__, get_defined_vars()]);exit;
+                $GLOBALS['_ANFORA']['composer_json'][] = $filename;
+                goto end;
+
+            } else {
+                $GLOBALS['_ANFORA']['composer_json'][] = $composer_json;
             }
+
             $json_decoded = self::object_to_array(json_decode($file_contents));
             $sub_require = self::getRequireComposerJson($dev, $json_decoded);
             $require_recursive = array_merge($require_recursive, $sub_require);
-            # print_r([__FILE__, __LINE__, $sub_require]);
+            if (!$json_decoded) {
+                print_r([__FILE__, __LINE__, $filename, (object) $json_decoded]);
+            }
+
             $psr4 = self::getPsr4Recursive(null, true, (object) $json_decoded, realpath(self::$vendorDir  . $vendor_package));
+            $files = self::getAutoloadOption('files', $dev, true, (object) $json_decoded, realpath(self::$vendorDir  . $vendor_package));
+            # print_r([__FILE__, __LINE__, $files, $json_decoded]);
             $json_decoded['autoload']['psr-4'] = $psr4;
-            # print_r([$json_decoded, $psr4, __FILE__, __LINE__]);
+            $json_decoded['autoload']['file'] = $files;
+
             $parent_json_decoded = self::object_to_array(parent::$json_decoded);
             $json_merge =  array_merge_recursive($parent_json_decoded, $json_decoded);
             parent::$json_decoded = (object) $json_merge;
-            if ('nikic/fast-route' == $vendor_package) {
-                # print_r([__FILE__, __LINE__, $json_merge]);
+            if ('nikic/fast-route' == $vendor_package && $dev) {
+                # print_r([__FILE__, __LINE__, $json_merge]);exit;
             }
-            # $require->{$vendor_package} = [$project_version, $composer_json, $json_merge];
             end:
         }
-        # print_r([__FILE__, __LINE__, $require_recursive]);
+        self::$require = parent::$json_decoded;
         return $require;
     }
 
@@ -224,8 +243,10 @@ class ComposerJSON extends JSON
 
     public static function getKeyValueRecursive($array = [], $base_dir = '')
     {
-        # print_r([__FILE__, __LINE__, $array, $base_dir]);
-        # print_r(debug_backtrace());
+        if (!in_array(gettype($array), ['array', 'object'])) {
+            # print_r(debug_backtrace());
+            $array = [];
+        }
         foreach ($array as $key => &$value) {
             $value = trim($value, '/');
             if (!preg_match('/:/', $value)) {
@@ -234,7 +255,6 @@ class ComposerJSON extends JSON
             }
             $value = str_replace('\\', '/', $value);
         }
-        # print_r([func_get_args(), get_defined_vars(), __FILE__, __LINE__]);
         return $array;
     }
 
@@ -258,5 +278,6 @@ class ComposerJSON extends JSON
         $GLOBALS['_ANFORA']['require'] = self::getRequireComposerJson();
         $GLOBALS['_ANFORA']['files'] = array_merge(self::getFiles(), [realpath(__DIR__ . '/../../../src/Anfora.php')]);
         $GLOBALS['_ANFORA']['psr-4'] = array_merge((array) self::getPsr4(0, true), ['Anfora\\' => realpath(__DIR__ . '/../../../src')]);
+        $GLOBALS['_ANFORA']['require-dev'] = self::getRequireComposerJson(true);
     }
 }
