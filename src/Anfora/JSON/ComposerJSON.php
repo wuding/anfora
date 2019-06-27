@@ -53,10 +53,10 @@ class ComposerJSON extends JSON
     /**
      * PSR 4
      */
-    public static function getPsr4($dev = null, $format = false)
+    public static function getPsr4($dev = null, $format = false, $section = 'psr-4')
     {
         $autoload = self::getAutoload($dev);
-        $notation = self::object_or_array_value($autoload, 'psr-4');
+        $notation = self::object_or_array_value($autoload, $section);
         $notation = $notation ? : null;
         (array) $array = $format ? self::getKeyValue($notation, [__METHOD__, __LINE__, __FILE__]) : $notation;
         return $array;
@@ -167,7 +167,9 @@ class ComposerJSON extends JSON
             $files = self::getAutoloadOption('files', $dev, true, (object) $json_decoded, realpath(self::$vendorDir  . $vendor_package));
             # print_r([__FILE__, __LINE__, $files, $json_decoded]);
             $json_decoded['autoload']['psr-4'] = $psr4;
-            $json_decoded['autoload']['file'] = $files;
+            $json_decoded['autoload']['files'] = $files;
+            $anfora_files = isset($GLOBALS['_ANFORA']['files']) ? $GLOBALS['_ANFORA']['files'] : [];
+            $GLOBALS['_ANFORA']['files'] = array_merge($anfora_files, $files);
 
             $parent_json_decoded = self::object_to_array(parent::$json_decoded);
             $json_merge =  array_merge_recursive($parent_json_decoded, $json_decoded);
@@ -235,7 +237,7 @@ class ComposerJSON extends JSON
                 $value = self::$vendorDir . $value;
             }
             end:
-            $value = realpath($value);
+            $value = realpath($value) ? : $value;
             $value = str_replace('\\', '/', $value);
         }
         return $array;
@@ -249,9 +251,10 @@ class ComposerJSON extends JSON
         }
         foreach ($array as $key => &$value) {
             $value = trim($value, '/');
+            # print_r([__FILE__, __LINE__, $key, $value]);
             if (!preg_match('/:/', $value)) {
                 $value = $base_dir . '/' . $value;
-                $value = realpath($value);
+                $value = realpath($value) ? : $value;
             }
             $value = str_replace('\\', '/', $value);
         }
@@ -276,7 +279,7 @@ class ComposerJSON extends JSON
     public static function setSuperVars()
     {
         $GLOBALS['_ANFORA']['require'] = self::getRequireComposerJson();
-        $GLOBALS['_ANFORA']['files'] = array_merge(self::getFiles(), [realpath(__DIR__ . '/../../../src/Anfora.php')]);
+        $GLOBALS['_ANFORA']['files'] = array_merge((array) self::getPsr4(0, true, 'files'), [realpath(__DIR__ . '/../../../src/Anfora.php')]);
         $GLOBALS['_ANFORA']['psr-4'] = array_merge((array) self::getPsr4(0, true), ['Anfora\\' => realpath(__DIR__ . '/../../../src')]);
         $GLOBALS['_ANFORA']['require-dev'] = self::getRequireComposerJson(true);
     }
